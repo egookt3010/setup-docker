@@ -1,3 +1,6 @@
-postgres/
-mysql/data/
-mongodb/data/
+postgres/*
+!postgres/.gitkeep
+mysql/data/*
+!mysql/data/.gitkeep
+mongodb/data/*
+!mongodb/data/gitkeep
