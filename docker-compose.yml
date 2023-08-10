@@ -1,0 +1,156 @@
+version: '3'
+
+networks:
+  distribusi_network:
+
+services:
+    ####################################################################################################
+    # Nginx
+    ####################################################################################################
+    nginx:
+        container_name: distribusi_nginx
+        build:
+            context: . 
+            dockerfile: .docker/nginx/Dockerfile
+        ports:
+            - '80:80'
+        volumes: 
+            - ./src:/var/www
+            - .docker/nginx/etc/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+            - .docker/nginx/nginx.conf:/etc/conf.d/nginx/nginx.conf
+        depends_on:
+            - php
+            - nodejs
+            - mysql
+            - pgsql
+            - redis
+            - mongodb
+        networks:
+            - distribusi_network
+    ####################################################################################################
+    # PHP
+    ####################################################################################################
+    php:
+        container_name: distribusi_php
+        build: .docker/php
+        ports:
+            - 5174:5173
+        volumes:
+            - ./src:/var/www:cached
+        networks:
+            - distribusi_network
+
+ 
+    ####################################################################################################
+    # DATABASE (MySQL)
+    ####################################################################################################
+    mysql:
+        container_name: distribusi_mysql
+        image: mysql:8.0
+        # env_file:
+        #     - .docker/mysql/.env
+        #     - .docker/.env
+        ports:
+            - 3308:3306
+            - 3307:3306
+        volumes:
+            - .docker/mysql/data:/var/lib/mysql
+            - .docker/mysql/logs:/var/log/mysql
+            - .docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+            - .docker/mysql/sql:/docker-entrypoint-initdb.d
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: master
+            MYSQL_USER: egooktafanda97
+            MYSQL_PASSWORD: egookta@97
+        networks:
+            - distribusi_network
+
+    ####################################################################################################
+    # DATABASE (PGSQL)
+    ####################################################################################################
+    pgsql:
+        container_name: distribusi_pgsql
+        image: postgres:14-alpine
+        # env_file:
+        #     - .docker/.env
+        ports:
+            - 5432:5432
+        volumes:
+             - .docker/postgres:/var/lib/postgresql/data
+        environment:
+            - POSTGRES_PASSWORD= egookta@97
+            - POSTGRES_USER= egooktafanda97
+            - POSTGRES_DB= master
+        networks:
+            - distribusi_network
+    
+    ####################################################################################################
+    # Redis
+    ####################################################################################################
+    redis:
+        container_name: distribusi_redis
+        image: "redis:alpine"
+        ports:
+            - "6379:6379"
+        volumes:
+            - .docker/redis/data:/var/lib/redis
+            - .docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
+        environment:
+            - REDIS_REPLICATION_MODE=master
+        networks:
+            - distribusi_network
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            retries: 3
+            timeout: 5s
+    ####################################################################################################
+    # mongoDB
+    ####################################################################################################
+    mongodb:
+        image: mongo
+        container_name: distribusi_mongo
+        restart: unless-stopped
+        # env_file: .docker/mongodb/.env
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=egooktafanda97
+            - MONGO_INITDB_ROOT_PASSWORD=egookta@97
+        ports:
+            - 7017:27017
+        volumes:
+            - .docker/mongodb/data:/data/db
+            - .docker/mongodb/etc/mongod.conf.orig:/etc/mongod.conf.orig
+            - .docker/mongodb/logs/:/var/log/mongodb/
+    
+    ####################################################################################################
+    # nodejs
+    ####################################################################################################
+    nodejs:
+        container_name: distribusi_web
+        restart: on-failure
+        build: ./node-app
+        ports:
+            - '81:5000'
+        environment:
+            - VIRTUAL_HOST=whoami-one.localhost
+        networks:
+            - distribusi_network
+
+    # ####################################################################################################
+    # # DATABASE (MariaDB)
+    # ####################################################################################################
+    # db:
+    #     container_name: laravel_mariadb
+    #     image: mariadb:10.11
+    #     ports:
+    #         - 3306:3306
+    #     volumes:
+    #         - .docker/db/data:/var/lib/mysql
+    #         - .docker/logs:/var/log/mysql
+    #         - .docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
+    #         - .docker/db/sql:/docker-entrypoint-initdb.d
+    #     environment:
+    #         MYSQL_ROOT_PASSWORD: root
+    #         MYSQL_DATABASE: laravel_db_name
+    #         MYSQL_USER: laravel_db_user
+    #         MYSQL_PASSWORD: laravel_db_pass

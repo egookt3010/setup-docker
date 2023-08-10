@@ -1,0 +1,9 @@
+ php:
+        container_name: distribusi_php
+        build: .docker/php
+        ports:
+            - 5174:5173
+        volumes:
+            - ./src:/var/www:cached
+        networks:
+            - distribusi_network

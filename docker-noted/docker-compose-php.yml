@@ -1,0 +1,58 @@
+networks:
+  distribusi_network:
+
+services:
+    ####################################################################################################
+    # Nginx
+    ####################################################################################################
+    nginx:
+        container_name: distribusi_nginx
+        build:
+            context: . 
+            dockerfile: .docker/nginx/Dockerfile
+        ports:
+            - '80:80'
+        volumes: 
+            - ./src:/var/www
+            - .docker/nginx/etc/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+            - .docker/nginx/nginx.conf:/etc/conf.d/nginx/nginx.conf
+        depends_on:
+            - php
+            - mysql
+        networks:
+            - distribusi_network
+    ####################################################################################################
+    # PHP
+    ####################################################################################################
+    php:
+        container_name: distribusi_php
+        build: .docker/php
+        ports:
+            - 5174:5173
+        volumes:
+            - ./src:/var/www:cached
+        networks:
+            - distribusi_network
+
+ 
+    ####################################################################################################
+    # DATABASE (MySQL)
+    ####################################################################################################
+    mysql:
+        container_name: distribusi_mysql
+        image: mysql:8.0
+        ports:
+            - 3308:3306
+            - 3307:3306
+        volumes:
+            - .docker/mysql/data:/var/lib/mysql
+            - .docker/mysql/logs:/var/log/mysql
+            - .docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+            - .docker/mysql/sql:/docker-entrypoint-initdb.d
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: master
+            MYSQL_USER: egooktafanda97
+            MYSQL_PASSWORD: egookta@97
+        networks:
+            - distribusi_network
